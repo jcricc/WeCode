@@ -1,7 +1,7 @@
-"use client";
+'use client'; // This ensures that the component runs on the client side
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef, Suspense } from 'react'; // Import Suspense
+import { useEffect, useState, useRef } from 'react'; // Client-side hooks
 import dynamic from 'next/dynamic';
 import { lineNumbers } from '@codemirror/view';
 import { python } from '@codemirror/lang-python';
@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import Script from 'next/script';
 
+// Dynamically import CodeMirror to prevent SSR issues
 const CodeMirror = dynamic(() => import('@uiw/react-codemirror'), { ssr: false });
 
 const saveStateToLocalStorage = (key, state) => {
@@ -26,37 +27,12 @@ const extractStarterFunction = (text) => {
   return functionMatch ? functionMatch[0] + '\n' : '';
 };
 
-const fetchQuestion = async (language, difficulty, setQuestion, setCode, setError, setLoading) => {
-  if (language && difficulty) {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/generate_question?language=${language}&difficulty=${difficulty}`);
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      setQuestion(data.question);
-
-      const starterFunction = extractStarterFunction(data.question);
-      if (starterFunction) {
-        setCode(starterFunction);
-        starterFunctionSet.current = true;
-      } else {
-        setCode('');
-      }
-    } catch (err) {
-      setError(`Failed to generate question: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-};
-
 export default function Exercise() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // Only works on the client side
   const router = useRouter();
   const language = searchParams.get('language');
   const difficulty = searchParams.get('difficulty');
+
   const [question, setQuestion] = useState('');
   const [code, setCode] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -73,6 +49,7 @@ export default function Exercise() {
 
   const starterFunctionSet = useRef(false);
 
+  // Ensure all this logic runs on the client side
   useEffect(() => {
     const loadState = async () => {
       const savedQuestion = loadStateFromLocalStorage('question');
@@ -114,6 +91,32 @@ export default function Exercise() {
     saveStateToLocalStorage('question', question);
     saveStateToLocalStorage('code', code);
   }, [question, code]);
+
+  const fetchQuestion = async (language, difficulty, setQuestion, setCode, setError, setLoading) => {
+    if (language && difficulty) {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/generate_question?language=${language}&difficulty=${difficulty}`);
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        setQuestion(data.question);
+
+        const starterFunction = extractStarterFunction(data.question);
+        if (starterFunction) {
+          setCode(starterFunction);
+          starterFunctionSet.current = true;
+        } else {
+          setCode('');
+        }
+      } catch (err) {
+        setError(`Failed to generate question: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   const runCode = async () => {
     try {
@@ -180,138 +183,135 @@ export default function Exercise() {
   };
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <div className="flex flex-col md:flex-row h-screen bg-gray-50 overflow-hidden">
-        <div className="w-full md:w-1/2 p-4 h-full">
-          <div className="border rounded-lg overflow-hidden shadow-sm h-full">
-            <CodeMirror
-              value={code}
-              height="100%"
-              extensions={[lineNumbers(), python()]}
-              theme={oneDark}
-              onChange={(value) => setCode(value)}
-            />
-          </div>
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 overflow-hidden">
+      <div className="w-full md:w-1/2 p-4 h-full">
+        <div className="border rounded-lg overflow-hidden shadow-sm h-full">
+          <CodeMirror
+            value={code}
+            height="100%"
+            extensions={[lineNumbers(), python()]}
+            theme={oneDark}
+            onChange={(value) => setCode(value)}
+          />
         </div>
-        <div className="w-full md:w-1/2 p-4 bg-white shadow-lg rounded-lg text-black overflow-auto">
-          <div className="flex justify-between mb-4">
-            <h3
-              className={`text-2xl font-semibold cursor-pointer ${
-                activeTab === 'question' ? 'text-blue-500' : 'text-gray-500'
-              }`}
-              onClick={() => setActiveTab('question')}
-            >
-              Question
-            </h3>
-            <h3
-              className={`text-2xl font-semibold cursor-pointer ${
-                activeTab === 'help' ? 'text-blue-500' : 'text-gray-500'
-              }`}
-              onClick={() => setActiveTab('help')}
-            >
-              Help
-            </h3>
-          </div>
-          {activeTab === 'question' ? (
-            <>
-              {loading ? (
-                <div className="flex items-center justify-center h-96">
-                  <Script
-                    src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"
-                    type="module"
-                  />
-                  <dotlottie-player
-                    src="https://lottie.host/6ac992f5-bcce-408a-9b5b-78946e3ceb02/7kVZkD8xb6.json"
-                    background="transparent"
-                    speed="1"
-                    style={{ width: '300px', height: '300px' }}
-                    loop
-                    autoplay
-                  ></dotlottie-player>
-                </div>
-              ) : (
-                <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm h-96 overflow-y-auto">
-                  <MarkdownRenderer content={question} />
-                </div>
-              )}
-              <div className="flex space-x-4 mb-4">
-                <button
-                  onClick={runCode}
-                  className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-                >
-                  Run Code
-                </button>
-                {isCorrect && (
-                  <button
-                    onClick={getNextQuestion}
-                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                  >
-                    Next Question
-                  </button>
-                )}
+      </div>
+      <div className="w-full md:w-1/2 p-4 bg-white shadow-lg rounded-lg text-black overflow-auto">
+        <div className="flex justify-between mb-4">
+          <h3
+            className={`text-2xl font-semibold cursor-pointer ${
+              activeTab === 'question' ? 'text-blue-500' : 'text-gray-500'
+            }`}
+            onClick={() => setActiveTab('question')}
+          >
+            Question
+          </h3>
+          <h3
+            className={`text-2xl font-semibold cursor-pointer ${
+              activeTab === 'help' ? 'text-blue-500' : 'text-gray-500'
+            }`}
+            onClick={() => setActiveTab('help')}
+          >
+            Help
+          </h3>
+        </div>
+        {activeTab === 'question' ? (
+          <>
+            {loading ? (
+              <div className="flex items-center justify-center h-96">
+                <Script
+                  src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"
+                  type="module"
+                />
+                <dotlottie-player
+                  src="https://lottie.host/6ac992f5-bcce-408a-9b5b-78946e3ceb02/7kVZkD8xb6.json"
+                  background="transparent"
+                  speed="1"
+                  style={{ width: '300px', height: '300px' }}
+                  loop
+                  autoplay
+                ></dotlottie-player>
               </div>
-              {isCorrect !== null && (
-                <div className="mt-4 max-h-96 overflow-auto">
-                  <h4 className="text-xl font-semibold mb-2">Feedback:</h4>
-                  <div
-                    className={`p-4 rounded border ${
-                      isCorrect ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'
-                    }`}
-                  >
-                    <MarkdownRenderer content={feedback} />
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm max-h-64 overflow-y-auto">
-              <textarea
-                className="w-full p-2 mb-4 border rounded"
-                rows="4"
-                value={helpQuery}
-                onChange={(e) => setHelpQuery(e.target.value)}
-                placeholder="Ask a question about the main question..."
-              />
+            ) : (
+              <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm h-96 overflow-y-auto">
+                <MarkdownRenderer content={question} />
+              </div>
+            )}
+            <div className="flex space-x-4 mb-4">
               <button
-                onClick={askForHelp}
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                onClick={runCode}
+                className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
               >
-                Ask for Help
+                Run Code
               </button>
-              {helpResponse && (
-                <div className="mt-4">
-                  <h4 className="text-xl font-semibold mb-2">Help Response:</h4>
-                  <div className="bg-white p-4 rounded border shadow-sm">
-                    <MarkdownRenderer content={helpResponse} />
-                  </div>
-                </div>
+              {isCorrect && (
+                <button
+                  onClick={getNextQuestion}
+                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                >
+                  Next Question
+                </button>
               )}
             </div>
-          )}
-          <div className="mt-4">
-            <h4 className="text-xl font-semibold mb-2">Your Progress</h4>
-            <div className="bg-white p-4 rounded border shadow-sm">
-              <p>Points: {points}</p>
-              <p>Level: {level}</p>
-              <div className="mt-4">
-                <h4 className="text-lg font-semibold">Achievements:</h4>
-                <ul>
-                  {achievements.map((achievement, index) => (
-                    <li key={index}>{achievement.achievement}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-4">
-                <h4 className="text-lg font-semibold">Personalized Feedback:</h4>
-                <div className="bg-white p-4 rounded border shadow-sm">
-                  <MarkdownRenderer content={personalizedFeedback} />
+            {isCorrect !== null && (
+              <div className="mt-4 max-h-96 overflow-auto">
+                <h4 className="text-xl font-semibold mb-2">Feedback:</h4>
+                <div
+                  className={`p-4 rounded border ${
+                    isCorrect ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'
+                  }`}
+                >
+                  <MarkdownRenderer content={feedback} />
                 </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm max-h-64 overflow-y-auto">
+            <textarea
+              className="w-full p-2 mb-4 border rounded"
+              rows="4"
+              value={helpQuery}
+              onChange={(e) => setHelpQuery(e.target.value)}
+              placeholder="Ask a question about the main question..."
+            />
+            <button
+              onClick={askForHelp}
+              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+            >
+              Ask for Help
+            </button>
+            {helpResponse && (
+              <div className="mt-4">
+                <h4 className="text-xl font-semibold mb-2">Help Response:</h4>
+                <div className="bg-white p-4 rounded border shadow-sm">
+                  <MarkdownRenderer content={helpResponse} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="mt-4">
+          <h4 className="text-xl font-semibold mb-2">Your Progress</h4>
+          <div className="bg-white p-4 rounded border shadow-sm">
+            <p>Points: {points}</p>
+            <p>Level: {level}</p>
+            <div className="mt-4">
+              <h4 className="text-lg font-semibold">Achievements:</h4>
+              <ul>
+                {achievements.map((achievement, index) => (
+                  <li key={index}>{achievement.achievement}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-4">
+              <h4 className="text-lg font-semibold">Personalized Feedback:</h4>
+              <div className="bg-white p-4 rounded border shadow-sm">
+                <MarkdownRenderer content={personalizedFeedback} />
               </div>
             </div>
           </div>
         </div>
       </div>
-    </Suspense>
+    </div>
   );
 }
-
