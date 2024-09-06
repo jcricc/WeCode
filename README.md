@@ -152,6 +152,7 @@ Exercise Page (app/exercise/page.js)
 Allows users to select a coding question based on the chosen programming language and difficulty.
 Users can write and run their code in a CodeMirror editor, which is tailored for different programming languages.
 Upon code submission, the backend checks the code and provides feedback.
+
 Question & Help Tabs:
 
 Users can switch between the "Question" tab to see the coding prompt and the "Help" tab to ask for AI assistance.
