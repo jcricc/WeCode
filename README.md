@@ -1,199 +1,167 @@
-WeCode Application Documentation
+# WeCode Application Documentation 📚
 
-WeCode is a web-based platform designed to assist users in improving their coding skills through practice exercises and AI-powered feedback. It is built using the Next.js framework, integrated with Supabase for backend services, and leverages the OpenAI API for generating programming questions, verifying code correctness, and providing user assistance.
+WeCode is a web-based platform designed to assist users in improving their coding skills through practice exercises and AI-powered feedback. Built with **Next.js**, integrated with **Supabase** for backend services, and leveraging the **OpenAI API**, WeCode offers real-time code feedback, personalized question generation, and progress tracking.
 
-The application enables users to solve coding problems, receive real-time feedback on their code, and track their progress over time. Key features include code execution, personalized question generation, and AI-assisted help.
+---
 
-Table of Contents
+## Table of Contents
+- [Technologies Used](#technologies-used)
+- [Directory Structure](#directory-structure)
+- [API Endpoints](#api-endpoints)
+  - [ask_for_help](#ask_for_help)
+  - [check_code](#check_code)
+  - [generate_question](#generate_question)
+  - [get_user_progress](#get_user_progress)
+- [Front-End Functionality](#front-end-functionality)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Contributing](#contributing)
 
-Technologies Used
-Directory Structure
-API Endpoints
-ask_for_help
-check_code
-generate_question
-get_user_progress
-Front-End Functionality
-Getting Started
-Contributing
+---
 
-Technologies Used:
+## 🛠 Technologies Used
 
-Next.js: The React framework for server-side rendering and routing.
-Supabase: Used for authentication and managing user data and progress.
-OpenAI API: Provides AI-driven features like code assistance and question generation.
-CodeMirror: A customizable code editor for the web, used for displaying and editing code in the browser.
-TailwindCSS: CSS framework for styling the UI.
+- **Next.js**: Framework for server-side rendering and routing.
+- **Supabase**: For authentication and managing user data.
+- **OpenAI API**: Provides AI-driven features like question generation and code validation.
+- **CodeMirror**: A customizable web code editor.
+- **TailwindCSS**: CSS framework for styling.
 
-Directory Structure
-The WeCode application follows a typical Next.js project structure:
+---
 
+## 📂 Directory Structure
+
+```bash
 wecode/
-│
 ├── api/
-│   ├── ask_for_help/          # Endpoint to ask for AI help
-│   ├── check_code/            # Endpoint to check the correctness of code
-│   ├── generate_question/     # Endpoint to generate coding questions
-│   └── get_user_progress/     # Endpoint to retrieve user's progress
-│
+│   ├── ask_for_help/         # Endpoint to ask for AI assistance
+│   ├── check_code/           # Endpoint to check code correctness
+│   ├── generate_question/    # Endpoint to generate questions
+│   └── get_user_progress/    # Endpoint to fetch user progress
 ├── app/
-│   ├── exercise/              # Main coding exercise page
-│   ├── auth/                  # Authentication pages for login and signup
-│   └── page.js                # Main entry page
-│
-├── components/                # React components used throughout the app
-├── lib/                       # Helper functions and Supabase client initialization
-├── public/                    # Public assets such as images
-├── styles/                    # Custom styling using CSS or Tailwind
-└── package.json               # Project dependencies and scripts
+│   ├── exercise/             # Coding exercise page
+│   ├── auth/                 # Authentication pages (login/signup)
+│   └── page.js               # Main entry page
+├── components/               # React components
+├── lib/                      # Helper functions, Supabase client
+├── public/                   # Public assets (images, etc.)
+├── styles/                   # Custom CSS/Tailwind styles
+└── package.json              # Project dependencies and scripts
 
-API Endpoints:
-
-ask_for_help API
-Path: /api/ask_for_help
-
+🔌 API Endpoints
+ask_for_help
+API Path: /api/ask_for_help
 Method: POST
-Description: This endpoint allows users to ask specific programming-related questions. It utilizes OpenAI to provide detailed and helpful responses.
-Payload:
-question: The main coding question or challenge the user is working on.
-helpQuery: A specific question the user needs help with.
-Response:
-Returns a detailed response from the AI to help clarify the user's query.
+Description: Allows users to ask programming-related questions. Uses OpenAI to provide detailed responses.
 
-Example:
-POST /api/ask_for_help
+Payload:
+
 {
   "question": "How do I reverse a string in Python?",
   "helpQuery": "Is there a more efficient way to do this?"
 }
-
 Response:
+
 {
   "response": "You can reverse a string using slicing in Python: 'your_string[::-1]'."
 }
-check_code API
-Path: /api/check_code
-
+check_code
+API Path: /api/check_code
 Method: POST
-
-Description: Validates the user's code by executing it and checking if it solves the problem correctly.
+Description: Validates user code by running it and checking if the solution is correct.
 
 Payload:
 
-code: The user's submitted code.
-question: The coding question that the code attempts to solve.
-Response:
-
-correct: Boolean indicating if the code is correct.
-feedback: AI-generated feedback on the correctness of the code.
-
-Example:
-POST /api/check_code
 {
   "code": "def reverse_string(s): return s[::-1]",
   "question": "Write a function that reverses a string."
 }
 
 Response:
+
 {
   "correct": true,
   "feedback": "The function works correctly for all input cases."
 }
-generate_question API
-Path: /api/generate_question
-
+generate_question
+API Path: /api/generate_question
 Method: GET
-
-Description: Generates a coding question based on the language and difficulty level provided.
-
+Description: Generates coding questions based on language and difficulty level.
 Query Parameters:
 
-language: The programming language for the question (e.g., python, javascript).
-difficulty: The difficulty level of the question (beginner, intermediate, advanced).
-Response:
+language: Programming language (e.g., python, javascript)
+difficulty: Difficulty level (beginner, intermediate, advanced)
 
-question: A coding question with problem description, input/output specifications, and any constraints.
 Example:
-json
-Copy code
+
 GET /api/generate_question?language=python&difficulty=beginner
 
 Response:
+
 {
   "question": "Write a Python function that reverses a string. The function should take a string as input and return the reversed version of that string."
 }
-get_user_progress API
-Path: /api/get_user_progress
-
+get_user_progress
+API Path: /api/get_user_progress
 Method: GET
-
-Description: Retrieves the progress of a specific user, such as points, level, and achievements.
-
+Description: Retrieves a user's progress, such as points, level, and achievements.
 Query Parameters:
 
-userId: The unique identifier of the user whose progress is being fetched.
-Response:
-
-A JSON object containing the user's progress data or an error message if the user ID is invalid.
+userId: Unique identifier of the user.
 
 Example:
+
 GET /api/get_user_progress?userId=123
 
 Response:
+
 {
   "points": 150,
   "level": 2,
   "achievements": ["Completed 10 exercises", "Solved 5 advanced problems"]
 }
 
-Front-End Functionality:
-Exercise Page (app/exercise/page.js)
+💻 Front-End Functionality
 
-Allows users to select a coding question based on the chosen programming language and difficulty.
-Users can write and run their code in a CodeMirror editor, which is tailored for different programming languages.
-Upon code submission, the backend checks the code and provides feedback.
+Exercise Page (app/exercise/page.js): Users select coding questions based on programming language and difficulty. CodeMirror allows users to write and execute code within the app.
+Tabs: Users can switch between "Question" and "Help" tabs for assistance.
+Real-Time Feedback: After submission, the code is checked, and feedback is provided.
+Progress Tracking: User progress (points, levels, achievements) is stored in Supabase and loaded on login.
 
-Question & Help Tabs:
-
-Users can switch between the "Question" tab to see the coding prompt and the "Help" tab to ask for AI assistance.
-Real-time Feedback:
-
-Upon code submission, feedback is provided on whether the solution is correct, along with suggestions for improvement if necessary.
-Progress Tracking:
-
-User progress is saved to Supabase and loaded upon login. Progress is shown as points, level, and achievements.
-
-Getting Started
-
+🚀 Getting Started
 Prerequisites
-Node.js and npm installed.
-A Supabase account for user authentication and data storage.
-An OpenAI API Key for AI-driven features.
-
+Node.js and npm installed
+A Supabase account (for authentication and data storage)
+An OpenAI API key (for AI-driven features)
 Installation
 
 Clone the repository:
+
 git clone https://github.com/jcricc/wecode.git
 cd wecode
 
-Install the dependencies:
+Install dependencies:
 
 npm install
 Set up environment variables:
 
-Create a .env file in the root of the project and add the following:
+Create a .env file and add:
 
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 OPENAI_API_KEY=your_openai_api_key
 
 Start the development server:
-npm run dev
-Open your browser and go to http://localhost:3000.
 
-Contributing
-We welcome contributions to the WeCode project. Here's how you can get involved:
+npm run dev
+
+Open your browser: Visit http://localhost:3000
+
+🤝 Contributing
+We welcome contributions! To get involved:
 
 Fork the repository.
 Create a new feature branch.
-Submit a pull request with a description of your changes.
+Submit a pull request with a clear description of your changes.
+Thank you for checking out WeCode! Happy coding! 🚀
