@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react'; // Import Suspense
 import dynamic from 'next/dynamic';
 import { lineNumbers } from '@codemirror/view';
 import { python } from '@codemirror/lang-python';
@@ -10,10 +10,8 @@ import { supabase } from '../lib/supabase';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import Script from 'next/script';
 
-// Dynamically import the CodeMirror component
 const CodeMirror = dynamic(() => import('@uiw/react-codemirror'), { ssr: false });
 
-// Helper functions to handle local storage
 const saveStateToLocalStorage = (key, state) => {
   localStorage.setItem(key, JSON.stringify(state));
 };
@@ -23,9 +21,7 @@ const loadStateFromLocalStorage = (key) => {
   return state ? JSON.parse(state) : null;
 };
 
-// Updated function to robustly extract the function definition
 const extractStarterFunction = (text) => {
-  // The regex now captures the function name, parameters, and return type if provided
   const functionMatch = text.match(/def\s+\w+\s*\(.*?\)\s*(->\s*\w+\s*)?:/);
   return functionMatch ? functionMatch[0] + '\n' : '';
 };
@@ -41,13 +37,12 @@ const fetchQuestion = async (language, difficulty, setQuestion, setCode, setErro
       }
       setQuestion(data.question);
 
-      // Extract the function def from the question
       const starterFunction = extractStarterFunction(data.question);
       if (starterFunction) {
-        setCode(starterFunction);  // Set the extracted function in the code editor
+        setCode(starterFunction);
         starterFunctionSet.current = true;
       } else {
-        setCode(''); // Clear the editor if no starter function is found
+        setCode('');
       }
     } catch (err) {
       setError(`Failed to generate question: ${err.message}`);
@@ -163,7 +158,7 @@ export default function Exercise() {
     setIsCorrect(null);
     setError('');
     starterFunctionSet.current = false;
-    setCode(''); // Clear the editor for the next question
+    setCode('');
     await fetchQuestion(language, difficulty, setQuestion, setCode, setError, setLoading);
   };
 
@@ -185,135 +180,138 @@ export default function Exercise() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-50 overflow-hidden">
-      <div className="w-full md:w-1/2 p-4 h-full">
-        <div className="border rounded-lg overflow-hidden shadow-sm h-full">
-          <CodeMirror
-            value={code}
-            height="100%"
-            extensions={[lineNumbers(), python()]}
-            theme={oneDark}
-            onChange={(value) => setCode(value)}
-          />
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="flex flex-col md:flex-row h-screen bg-gray-50 overflow-hidden">
+        <div className="w-full md:w-1/2 p-4 h-full">
+          <div className="border rounded-lg overflow-hidden shadow-sm h-full">
+            <CodeMirror
+              value={code}
+              height="100%"
+              extensions={[lineNumbers(), python()]}
+              theme={oneDark}
+              onChange={(value) => setCode(value)}
+            />
+          </div>
         </div>
-      </div>
-      <div className="w-full md:w-1/2 p-4 bg-white shadow-lg rounded-lg text-black overflow-auto">
-        <div className="flex justify-between mb-4">
-          <h3
-            className={`text-2xl font-semibold cursor-pointer ${
-              activeTab === 'question' ? 'text-blue-500' : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('question')}
-          >
-            Question
-          </h3>
-          <h3
-            className={`text-2xl font-semibold cursor-pointer ${
-              activeTab === 'help' ? 'text-blue-500' : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('help')}
-          >
-            Help
-          </h3>
-        </div>
-        {activeTab === 'question' ? (
-          <>
-            {loading ? (
-              <div className="flex items-center justify-center h-96">
-                <Script
-                  src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"
-                  type="module"
-                />
-                <dotlottie-player
-                  src="https://lottie.host/6ac992f5-bcce-408a-9b5b-78946e3ceb02/7kVZkD8xb6.json"
-                  background="transparent"
-                  speed="1"
-                  style={{ width: '300px', height: '300px' }}
-                  loop
-                  autoplay
-                ></dotlottie-player>
-              </div>
-            ) : (
-              <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm h-96 overflow-y-auto">
-                <MarkdownRenderer content={question} />
-              </div>
-            )}
-            <div className="flex space-x-4 mb-4">
-              <button
-                onClick={runCode}
-                className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-              >
-                Run Code
-              </button>
-              {isCorrect && (
+        <div className="w-full md:w-1/2 p-4 bg-white shadow-lg rounded-lg text-black overflow-auto">
+          <div className="flex justify-between mb-4">
+            <h3
+              className={`text-2xl font-semibold cursor-pointer ${
+                activeTab === 'question' ? 'text-blue-500' : 'text-gray-500'
+              }`}
+              onClick={() => setActiveTab('question')}
+            >
+              Question
+            </h3>
+            <h3
+              className={`text-2xl font-semibold cursor-pointer ${
+                activeTab === 'help' ? 'text-blue-500' : 'text-gray-500'
+              }`}
+              onClick={() => setActiveTab('help')}
+            >
+              Help
+            </h3>
+          </div>
+          {activeTab === 'question' ? (
+            <>
+              {loading ? (
+                <div className="flex items-center justify-center h-96">
+                  <Script
+                    src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"
+                    type="module"
+                  />
+                  <dotlottie-player
+                    src="https://lottie.host/6ac992f5-bcce-408a-9b5b-78946e3ceb02/7kVZkD8xb6.json"
+                    background="transparent"
+                    speed="1"
+                    style={{ width: '300px', height: '300px' }}
+                    loop
+                    autoplay
+                  ></dotlottie-player>
+                </div>
+              ) : (
+                <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm h-96 overflow-y-auto">
+                  <MarkdownRenderer content={question} />
+                </div>
+              )}
+              <div className="flex space-x-4 mb-4">
                 <button
-                  onClick={getNextQuestion}
-                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                  >
-                  Next Question
+                  onClick={runCode}
+                  className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
+                >
+                  Run Code
                 </button>
+                {isCorrect && (
+                  <button
+                    onClick={getNextQuestion}
+                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  >
+                    Next Question
+                  </button>
+                )}
+              </div>
+              {isCorrect !== null && (
+                <div className="mt-4 max-h-96 overflow-auto">
+                  <h4 className="text-xl font-semibold mb-2">Feedback:</h4>
+                  <div
+                    className={`p-4 rounded border ${
+                      isCorrect ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'
+                    }`}
+                  >
+                    <MarkdownRenderer content={feedback} />
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm max-h-64 overflow-y-auto">
+              <textarea
+                className="w-full p-2 mb-4 border rounded"
+                rows="4"
+                value={helpQuery}
+                onChange={(e) => setHelpQuery(e.target.value)}
+                placeholder="Ask a question about the main question..."
+              />
+              <button
+                onClick={askForHelp}
+                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              >
+                Ask for Help
+              </button>
+              {helpResponse && (
+                <div className="mt-4">
+                  <h4 className="text-xl font-semibold mb-2">Help Response:</h4>
+                  <div className="bg-white p-4 rounded border shadow-sm">
+                    <MarkdownRenderer content={helpResponse} />
+                  </div>
+                </div>
               )}
             </div>
-            {isCorrect !== null && (
-              <div className="mt-4 max-h-96 overflow-auto">
-                <h4 className="text-xl font-semibold mb-2">Feedback:</h4>
-                <div
-                  className={`p-4 rounded border ${
-                    isCorrect ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'
-                  }`}
-                >
-                  <MarkdownRenderer content={feedback} />
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="bg-gray-100 p-4 rounded mb-4 shadow-sm max-h-64 overflow-y-auto">
-            <textarea
-              className="w-full p-2 mb-4 border rounded"
-              rows="4"
-              value={helpQuery}
-              onChange={(e) => setHelpQuery(e.target.value)}
-              placeholder="Ask a question about the main question..."
-            />
-            <button
-              onClick={askForHelp}
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-            >
-              Ask for Help
-            </button>
-            {helpResponse && (
+          )}
+          <div className="mt-4">
+            <h4 className="text-xl font-semibold mb-2">Your Progress</h4>
+            <div className="bg-white p-4 rounded border shadow-sm">
+              <p>Points: {points}</p>
+              <p>Level: {level}</p>
               <div className="mt-4">
-                <h4 className="text-xl font-semibold mb-2">Help Response:</h4>
-                <div className="bg-white p-4 rounded border shadow-sm">
-                  <MarkdownRenderer content={helpResponse} />
-                </div>
+                <h4 className="text-lg font-semibold">Achievements:</h4>
+                <ul>
+                  {achievements.map((achievement, index) => (
+                    <li key={index}>{achievement.achievement}</li>
+                  ))}
+                </ul>
               </div>
-            )}
-          </div>
-        )}
-        <div className="mt-4">
-          <h4 className="text-xl font-semibold mb-2">Your Progress</h4>
-          <div className="bg-white p-4 rounded border shadow-sm">
-            <p>Points: {points}</p>
-            <p>Level: {level}</p>
-            <div className="mt-4">
-              <h4 className="text-lg font-semibold">Achievements:</h4>
-              <ul>
-                {achievements.map((achievement, index) => (
-                  <li key={index}>{achievement.achievement}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-4">
-              <h4 className="text-lg font-semibold">Personalized Feedback:</h4>
-              <div className="bg-white p-4 rounded border shadow-sm">
-                <MarkdownRenderer content={personalizedFeedback} />
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold">Personalized Feedback:</h4>
+                <div className="bg-white p-4 rounded border shadow-sm">
+                  <MarkdownRenderer content={personalizedFeedback} />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Suspense>
   );
 }
+
