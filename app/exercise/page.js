@@ -1,7 +1,8 @@
-'use client'; // This ensures that the component runs on the client side
+// app/exercise/ExerciseComponent.js
+'use client'; // Ensures this component is only rendered on the client side
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react'; // Client-side hooks
+import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { lineNumbers } from '@codemirror/view';
 import { python } from '@codemirror/lang-python';
@@ -10,7 +11,6 @@ import { supabase } from '../lib/supabase';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import Script from 'next/script';
 
-// Dynamically import CodeMirror to prevent SSR issues
 const CodeMirror = dynamic(() => import('@uiw/react-codemirror'), { ssr: false });
 
 const saveStateToLocalStorage = (key, state) => {
@@ -27,7 +27,7 @@ const extractStarterFunction = (text) => {
   return functionMatch ? functionMatch[0] + '\n' : '';
 };
 
-export default function Exercise() {
+export default function ExerciseComponent() {
   const searchParams = useSearchParams(); // Only works on the client side
   const router = useRouter();
   const language = searchParams.get('language');
@@ -49,7 +49,6 @@ export default function Exercise() {
 
   const starterFunctionSet = useRef(false);
 
-  // Ensure all this logic runs on the client side
   useEffect(() => {
     const loadState = async () => {
       const savedQuestion = loadStateFromLocalStorage('question');
